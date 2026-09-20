@@ -8,57 +8,37 @@ const supabase = createClient(
 
 const ADMIN_EMAIL = "uxip78@gmail.com";
 
-const $ = (id) => document.getElementById(id);
-
-function esc(value) {
-  return String(value ?? "").replace(/[&<>"']/g, (m) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;"
-  }[m]));
-}
-
-
-// ==========================================
-// COMPROBAR SI ES ADMIN
-// ==========================================
-
-async function checkAdmin() {
+async function iniciarAdmin() {
 
   const {
     data: { session }
   } = await supabase.auth.getSession();
 
-  if (!session) {
+  if (!session) return;
+
+  if (
+    session.user.email?.toLowerCase() !==
+    ADMIN_EMAIL.toLowerCase()
+  ) {
     return;
   }
 
-  const email =
-    session.user.email?.toLowerCase();
+  console.log("🛡️ Admin activado");
 
-  if (email !== ADMIN_EMAIL.toLowerCase()) {
-    return;
-  }
-
-  console.log("🛡️ Administrador conectado");
-
-  addAdminButtons();
+  añadirBotones();
 }
 
 
 // ==========================================
-// AÑADIR BOTONES DE BORRAR
+// BOTONES
 // ==========================================
 
-async function addAdminButtons() {
+async function añadirBotones() {
 
-  const box = $("posts");
+  const postsBox =
+    document.getElementById("posts");
 
-  if (!box) {
-    return;
-  }
+  if (!postsBox) return;
 
   const {
     data: posts,
@@ -72,42 +52,35 @@ async function addAdminButtons() {
     .limit(50);
 
   if (error) {
-    console.error(
-      "Error obteniendo publicaciones:",
-      error
-    );
+    console.error(error);
     return;
   }
 
   const articles =
-    box.querySelectorAll("article.post");
+    postsBox.querySelectorAll("article.post");
 
   articles.forEach((article, index) => {
 
-    if (article.querySelector(".admin-delete")) {
+    if (
+      article.querySelector(".admin-delete")
+    ) {
       return;
     }
 
     const post = posts[index];
 
-    if (!post) {
-      return;
-    }
+    if (!post) return;
 
     const button =
       document.createElement("button");
 
     button.className = "admin-delete";
 
-    button.textContent =
-      "🗑️ Borrar";
-
-    button.style.marginTop = "10px";
-    button.style.cursor = "pointer";
+    button.textContent = "🗑️ Borrar";
 
     button.addEventListener(
       "click",
-      () => deletePost(post.id, article)
+      () => borrarPost(post.id, article)
     );
 
     article.appendChild(button);
@@ -116,23 +89,19 @@ async function addAdminButtons() {
 
 
 // ==========================================
-// BORRAR PUBLICACIÓN
+// BORRAR
 // ==========================================
 
-async function deletePost(
+async function borrarPost(
   postId,
   article
 ) {
 
-  // Volver a comprobar la cuenta
   const {
     data: { session }
   } = await supabase.auth.getSession();
 
-  if (!session) {
-    alert("Debes iniciar sesión.");
-    return;
-  }
+  if (!session) return;
 
   if (
     session.user.email?.toLowerCase() !==
@@ -142,46 +111,33 @@ async function deletePost(
     return;
   }
 
-  const confirmed =
-    confirm(
+  if (
+    !confirm(
       "¿Seguro que quieres borrar esta publicación?"
-    );
-
-  if (!confirmed) {
+    )
+  ) {
     return;
   }
 
-  const {
-    error
-  } = await supabase
-    .from("posts")
-    .delete()
-    .eq("id", postId);
+  const { error } =
+    await supabase
+      .from("posts")
+      .delete()
+      .eq("id", postId);
 
   if (error) {
 
-    console.error(
-      "Error borrando publicación:",
-      error
-    );
-
     alert(
-      "No se pudo borrar:\n" +
+      "Error al borrar: " +
       error.message
     );
+
+    console.error(error);
 
     return;
   }
 
-  // Eliminarla visualmente
-  if (article) {
-    article.remove();
-  }
-
-  console.log(
-    "🗑️ Publicación eliminada:",
-    postId
-  );
+  article.remove();
 }
 
 
@@ -189,28 +145,20 @@ async function deletePost(
 // ESPERAR A QUE SCRIPT.JS CARGUE LOS POSTS
 // ==========================================
 
-function startAdmin() {
+const observer =
+  new MutationObserver(() => {
+    iniciarAdmin();
+  });
 
-  checkAdmin();
+const postsBox =
+  document.getElementById("posts");
 
-  const observer =
-    new MutationObserver(() => {
-      checkAdmin();
-    });
+if (postsBox) {
 
-  const box = $("posts");
-
-  if (box) {
-    observer.observe(box, {
-      childList: true,
-      subtree: true
-    });
-  }
+  observer.observe(postsBox, {
+    childList: true,
+    subtree: true
+  });
 }
 
-
-// ==========================================
-// INICIO
-// ==========================================
-
-startAdmin();
+iniciarAdmin();
