@@ -1,6 +1,14 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./supabase.js";
 
+window.addEventListener("error", (e) => {
+  alert("ERROR JS: " + e.message);
+});
+
+window.addEventListener("unhandledrejection", (e) => {
+  alert("ERROR PROMESA: " + e.reason);
+});
+
 const supabase = createClient(
   SUPABASE_URL,
   SUPABASE_ANON_KEY
