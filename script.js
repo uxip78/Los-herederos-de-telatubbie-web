@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./supabase.js";
 
-const configured = !SUPABASE_URL.includes("TU-PROYECTO") && !SUPABASE_ANON_KEY.includes("TU_CLAVE");
+const configured = !SUPABASE_URL.includes("https://papdmgqzfgrlynyplkxh.supabase.co/rest/v1/") && !SUPABASE_ANON_KEY.includes("TU_CLAVE");
 const supabase = configured ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 const $ = id => document.getElementById(id);
